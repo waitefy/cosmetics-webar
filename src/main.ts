@@ -2,9 +2,8 @@ import shades from './shades.json'
 import './style.css'
 
 const options = document.querySelector<HTMLDivElement>('#shade-options')
-const selectedShade = document.querySelector<HTMLSpanElement>('#selected-shade')
 
-if (options && selectedShade) {
+if (options) {
   for (const [index, shade] of shades.entries()) {
     const color = `rgb(${shade.rgb.join(', ')})`
     const label = document.createElement('label')
@@ -24,7 +23,6 @@ if (options && selectedShade) {
     options.append(label)
 
     const selectShade = () => {
-      selectedShade.textContent = shade.name
       document.documentElement.style.setProperty('--selected-color', color)
     }
 

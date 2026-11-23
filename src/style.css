@@ -65,7 +65,9 @@ body {
 
 .product-details {
   align-self: center;
-  padding: clamp(1.5rem, 6vw, 5rem);
+  container-type: inline-size;
+  padding-block: clamp(1.5rem, 6vw, 5rem);
+  padding-inline: clamp(1.5rem, 4.5vw, 5rem) clamp(1rem, 2vw, 2rem);
 }
 
 .collection {
@@ -75,7 +77,7 @@ body {
 
 h1 {
   margin: 0 0 2rem;
-  font: 400 clamp(2.3rem, 5vw, 4.7rem) / 1.02 Georgia, serif;
+  font: 400 clamp(2rem, 13cqi, 4.7rem) / 1.02 Georgia, serif;
 }
 
 .palette {
@@ -123,8 +125,7 @@ h1 {
   opacity: 0;
 }
 
-.swatch,
-.selection-chip {
+.swatch {
   width: 1rem;
   height: 1rem;
   flex: 0 0 1rem;
@@ -133,21 +134,20 @@ h1 {
   background: var(--swatch-color);
 }
 
-.selection {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  min-height: 1.5rem;
-  margin: 1.25rem 0 0;
-}
-
-.selection-chip {
-  background: var(--selected-color);
-}
-
 @media (max-width: 44rem) {
   .product {
     grid-template-columns: 1fr;
+    min-height: auto;
+    margin: 0;
+    padding-inline: 0;
+  }
+
+  .product-details {
+    padding: 1.5rem;
+  }
+
+  h1 {
+    font-size: clamp(2.3rem, 5vw, 4.7rem);
   }
 
   .product-image {
