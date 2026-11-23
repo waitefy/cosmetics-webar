@@ -1,0 +1,161 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, sans-serif;
+  color: #352322;
+  background: #f9f3ed;
+  --selected-color: #be5a78;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.product {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  max-width: 75rem;
+  min-height: 36rem;
+  margin: clamp(1rem, 5vw, 5rem) auto;
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+
+.product-image {
+  display: grid;
+  place-items: center;
+  min-height: 22rem;
+  padding: 3rem 2rem;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 55% 39%, #f8d4c1, #e9af9e);
+}
+
+.lipstick {
+  display: grid;
+  width: 6.25rem;
+  justify-items: center;
+  filter: drop-shadow(1.25rem 1.65rem 1rem #763b3150);
+  transform: rotate(-21deg);
+}
+
+.lipstick-tip {
+  width: 57%;
+  height: 7.5rem;
+  border-radius: 75% 25% 0 0 / 37% 14% 0 0;
+  background:
+    linear-gradient(90deg, #1f080945, #fff4 34%, transparent 58%, #2710166b),
+    var(--selected-color);
+}
+
+.lipstick-neck {
+  width: 75%;
+  height: 3.5rem;
+  border-radius: .2rem .2rem 0 0;
+  background: linear-gradient(90deg, #67432f, #f5cc94 28%, #a97853 61%, #5a3a2a);
+}
+
+.lipstick-body {
+  width: 100%;
+  height: 7.75rem;
+  border-radius: .2rem .2rem 1rem 1rem;
+  background: linear-gradient(90deg, #261819, #603939 38%, #452526 58%, #211617);
+}
+
+.product-details {
+  align-self: center;
+  padding: clamp(1.5rem, 6vw, 5rem);
+}
+
+.collection {
+  color: #71443d;
+  font-size: .9rem;
+}
+
+h1 {
+  margin: 0 0 2rem;
+  font: 400 clamp(2.3rem, 5vw, 4.7rem) / 1.02 Georgia, serif;
+}
+
+.palette {
+  margin: 0;
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+}
+
+.palette legend {
+  margin-bottom: .75rem;
+  padding: 0;
+  font-weight: 600;
+}
+
+.shade-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.shade-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .55rem .7rem;
+  border: 1px solid #976c61;
+  border-radius: .35rem;
+  cursor: pointer;
+}
+
+.shade-option:has(:checked) {
+  border-color: #352322;
+  background: #f0e0d8;
+}
+
+.shade-option:has(:focus-visible) {
+  outline: 2px solid #352322;
+  outline-offset: 2px;
+}
+
+.shade-option input {
+  position: absolute;
+  opacity: 0;
+}
+
+.swatch,
+.selection-chip {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  border: 1px solid #35232230;
+  border-radius: 50%;
+  background: var(--swatch-color);
+}
+
+.selection {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 1.5rem;
+  margin: 1.25rem 0 0;
+}
+
+.selection-chip {
+  background: var(--selected-color);
+}
+
+@media (max-width: 44rem) {
+  .product {
+    grid-template-columns: 1fr;
+  }
+
+  .product-image {
+    min-height: 19rem;
+    padding: 1rem;
+  }
+
+  .lipstick {
+    transform: rotate(-21deg) scale(.8);
+  }
+}

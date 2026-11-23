@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Карточка учебной помады «Мягкий цвет» с выбором оттенка.">
+    <title>Помада «Мягкий цвет»</title>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <main class="product">
+      <div class="product-image" aria-hidden="true">
+        <div class="lipstick">
+          <div class="lipstick-tip"></div>
+          <div class="lipstick-neck"></div>
+          <div class="lipstick-body"></div>
+        </div>
+      </div>
+      <section class="product-details" aria-labelledby="product-title">
+        <p class="collection">Учебная коллекция</p>
+        <h1 id="product-title">Помада<br>«Мягкий цвет»</h1>
+        <fieldset class="palette">
+          <legend>Выберите оттенок</legend>
+          <div id="shade-options" class="shade-options"></div>
+        </fieldset>
+        <p class="selection" aria-live="polite" aria-atomic="true">
+          <span class="selection-chip" aria-hidden="true"></span>
+          <span id="selected-shade"></span>
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
