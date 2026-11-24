@@ -48,7 +48,7 @@ if (options) {
       document.documentElement.style.setProperty('--chosen-shade', color)
       setGalleryShade?.(shade.id.toLowerCase())
       setModelColor?.(color)
-      setTryOnColor?.(color)
+      setTryOnColor?.(shade.rgb)
     }
 
     input.addEventListener('change', selectShade)

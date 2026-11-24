@@ -1,4 +1,6 @@
 import type { FaceLandmarker } from '@mediapipe/tasks-vision'
+import type { LipMask } from './lip-tracking'
+import { createLipRenderer } from './lip-rendering'
 
 type TryOnSession = {
   stream?: MediaStream
@@ -38,29 +40,20 @@ export function setupProductTryOn(onClose: () => void) {
   const errorStatus = document.querySelector<HTMLElement>('#try-on-error')
   const context = view?.getContext('2d')
   if (!visual || !panel || !video || !view || !start || !close || !exit || !neutralOption || !status || !errorStatus || !context) return
+  const renderLips = createLipRenderer(context)
 
   let activeSession: TryOnSession | undefined
-  let capturedFrame: HTMLCanvasElement | undefined
-  let lipMask: Path2D | undefined
-  let color: string | null = null
+  let capturedFrame: CanvasRenderingContext2D | undefined
+  let lipMask: LipMask | undefined
+  let color: readonly number[] | null = null
 
   const paint = () => {
     if (!capturedFrame || !lipMask || !color) {
       context.clearRect(0, 0, view.width, view.height)
       return
     }
-    context.drawImage(capturedFrame, 0, 0)
-
-    context.save()
-    context.fillStyle = color
-    context.globalAlpha = .22
-    context.filter = 'blur(.8px)'
-    context.fill(lipMask, 'evenodd')
-    // Keep the camera's highlights and lip texture while applying the shade's chroma.
-    context.globalCompositeOperation = 'color'
-    context.globalAlpha = .86
-    context.fill(lipMask, 'evenodd')
-    context.restore()
+    context.drawImage(capturedFrame.canvas, 0, 0)
+    renderLips?.(capturedFrame, lipMask, color)
   }
 
   const updateTracking = (session: TryOnSession) => {
@@ -159,7 +152,7 @@ export function setupProductTryOn(onClose: () => void) {
     if (activeSession !== session) return
 
     try {
-      const { createLipTracker, createLipMask } = await import('./lip-tracking')
+      const { createLipTracker, createLipMaskTracker } = await import('./lip-tracking')
       if (activeSession !== session) return
       const tracker = await createLipTracker()
       if (activeSession !== session) {
@@ -173,10 +166,9 @@ export function setupProductTryOn(onClose: () => void) {
       if (!sourceContext) throw new Error('Не удалось создать область захвата кадра')
 
       const frameInterval = 1000 / 30
-      const trackingGrace = 100
+      const maskTracker = createLipMaskTracker()
       let nextFrameTime = performance.now()
-      let lastVisibleLips = -Infinity
-      let confirmedFrames = 0
+      let lastPaintedMask = -Infinity
 
       const track = (time: number) => {
         if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && time >= nextFrameTime) {
@@ -191,26 +183,17 @@ export function setupProductTryOn(onClose: () => void) {
               lipMask = undefined
             }
             if (!capturedFrame) {
-              lastVisibleLips = -Infinity
-              confirmedFrames = 0
+              maskTracker.reset()
+              lastPaintedMask = -Infinity
             }
             // Read and display the same camera frame so the overlay cannot lag behind the preview.
             sourceContext.drawImage(video, 0, 0)
             const [face] = tracker.detectForVideo(source, time).faceLandmarks
-            capturedFrame = source
-            const visibleMask = face && createLipMask(face, sourceContext)
-            confirmedFrames = visibleMask ? Math.min(confirmedFrames + 1, 2) : 0
-            if (visibleMask) {
-              lastVisibleLips = time
-              if (lipMask || confirmedFrames === 2) lipMask = visibleMask
-            } else if (lipMask && time - lastVisibleLips < trackingGrace) {
-              // Follow current landmarks while the image-based visibility check recovers.
-              if (face) lipMask = createLipMask(face, sourceContext, false)
-            } else {
-              lipMask = undefined
-            }
+            capturedFrame = sourceContext
+            lipMask = maskTracker.update(face, sourceContext, time)
+            if (lipMask) lastPaintedMask = time
             paint()
-            const message = time - lastVisibleLips < 350 ? '' : face ? 'Губы не распознаны' : 'Посмотрите в камеру'
+            const message = time - lastPaintedMask < 350 ? '' : face ? 'Губы не распознаны' : 'Посмотрите в камеру'
             if (status.textContent !== message) status.textContent = message
           } catch (error) {
             console.error('Не удалось обработать кадр примерки', error)
@@ -241,7 +224,7 @@ export function setupProductTryOn(onClose: () => void) {
   })
   window.addEventListener('pagehide', () => stopTryOn(false))
 
-  return (nextColor: string | null) => {
+  return (nextColor: readonly number[] | null) => {
     color = nextColor
     if (activeSession) updateTracking(activeSession)
     paint()
