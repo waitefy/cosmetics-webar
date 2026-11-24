@@ -9,12 +9,13 @@
   </head>
   <body>
     <main class="product">
-      <div class="product-image" aria-hidden="true">
-        <div class="lipstick">
-          <div class="lipstick-tip"></div>
-          <div class="lipstick-neck"></div>
-          <div class="lipstick-body"></div>
+      <div class="product-image">
+        <div class="product-scene">
+          <img id="product-poster" class="product-poster" src="/src/assets/lipstick-s001.webp" width="800" height="800" alt="Открытая помада «Мягкий цвет»">
+          <div id="product-model" class="product-model" hidden></div>
         </div>
+        <button type="button" id="model-toggle" class="model-switch" aria-label="Посмотреть в 3D" aria-controls="product-model" aria-expanded="false">3D</button>
+        <p id="model-status" class="model-status" role="status"></p>
       </div>
       <section class="product-details" aria-labelledby="product-title">
         <p class="collection">Учебная коллекция</p>
