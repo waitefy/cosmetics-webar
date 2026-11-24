@@ -40,14 +40,32 @@
           </button>
         </div>
         <p id="model-status" class="model-status" role="status"></p>
+        <div id="product-try-on" class="try-on" role="group" aria-label="Виртуальная примерка" hidden>
+          <video id="try-on-video" muted playsinline aria-hidden="true"></video>
+          <canvas id="try-on-view" aria-hidden="true"></canvas>
+          <button type="button" id="try-on-close" class="model-switch" aria-label="Закрыть примерку">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" focusable="false">
+              <path d="m6 6 12 12M18 6 6 18"/>
+            </svg>
+          </button>
+          <p id="try-on-status" class="try-on-status" role="status"></p>
+        </div>
       </div>
       <section class="product-details" aria-labelledby="product-title">
         <p class="collection">Учебная коллекция</p>
         <h1 id="product-title">Помада<br>«Мягкий цвет»</h1>
         <fieldset class="palette">
-          <legend>Выберите оттенок</legend>
-          <div id="shade-options" class="shade-options"></div>
+          <legend>Оттенок <span id="selected-shade" class="selected-shade">Розовый</span></legend>
+          <div id="shade-options" class="shade-options">
+            <label id="try-on-neutral" class="shade-option" title="Без оттенка" hidden>
+              <input type="radio" name="shade" id="shade-none" value="none" aria-label="Без оттенка">
+              <span class="swatch swatch-neutral" aria-hidden="true"></span>
+            </label>
+          </div>
         </fieldset>
+        <button type="button" id="try-on-start" class="try-on-start" aria-controls="product-try-on">Примерить оттенок</button>
+        <button type="button" id="try-on-exit" class="try-on-exit" aria-controls="product-try-on" hidden>Выйти из примерки</button>
+        <p id="try-on-error" class="try-on-error" role="status"></p>
       </section>
     </main>
   </body>
