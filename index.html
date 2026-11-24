@@ -8,7 +8,13 @@
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <main class="product">
+    <header class="site-header">
+      <div class="site-header-inner">
+        <span class="wordmark">Мягкий цвет</span>
+        <span class="site-collection">Учебная коллекция</span>
+      </div>
+    </header>
+    <main id="product" class="product" aria-labelledby="product-title">
       <div class="product-image">
         <div class="product-scene">
           <div id="product-photos" class="product-photos">
@@ -51,9 +57,11 @@
           <p id="try-on-status" class="try-on-status" role="status"></p>
         </div>
       </div>
-      <section class="product-details" aria-labelledby="product-title">
-        <p class="collection">Учебная коллекция</p>
-        <h1 id="product-title">Помада<br>«Мягкий цвет»</h1>
+      <div class="product-titlegroup">
+        <h1 id="product-title">Мягкий цвет</h1>
+        <p class="product-intro">От пыльного розового до яркого голубого. Выберите цвет и рассмотрите помаду с разных ракурсов.</p>
+      </div>
+      <div class="shade-panel">
         <fieldset class="palette">
           <legend>Оттенок <span id="selected-shade" class="selected-shade">Розовый</span></legend>
           <div id="shade-options" class="shade-options">
@@ -63,10 +71,17 @@
             </label>
           </div>
         </fieldset>
-        <button type="button" id="try-on-start" class="try-on-start" aria-controls="product-try-on">Примерить оттенок</button>
+        <button type="button" id="try-on-start" class="try-on-start" aria-controls="product-try-on" aria-describedby="try-on-hint">Примерить оттенок</button>
         <button type="button" id="try-on-exit" class="try-on-exit" aria-controls="product-try-on" hidden>Выйти из примерки</button>
+        <p id="try-on-hint" class="try-on-hint">Понадобится фронтальная камера</p>
         <p id="try-on-error" class="try-on-error" role="status"></p>
-      </section>
+      </div>
     </main>
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <span>Курсовая работа РТУ МИРЭА</span>
+        <a href="https://github.com/waitefy/cosmetics-webar">Исходный код</a>
+      </div>
+    </footer>
   </body>
 </html>

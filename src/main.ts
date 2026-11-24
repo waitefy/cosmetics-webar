@@ -45,6 +45,7 @@ if (options) {
       input.checked = true
       restoreShade = selectShade
       if (selectedShade) selectedShade.textContent = shade.name
+      document.documentElement.style.setProperty('--chosen-shade', color)
       setGalleryShade?.(shade.id.toLowerCase())
       setModelColor?.(color)
       setTryOnColor?.(color)
