@@ -11,10 +11,34 @@
     <main class="product">
       <div class="product-image">
         <div class="product-scene">
-          <img id="product-poster" class="product-poster" src="/src/assets/lipstick-s001.webp" width="800" height="800" alt="Открытая помада «Мягкий цвет»">
+          <div id="product-photos" class="product-photos">
+            <img id="product-poster" class="product-poster" src="/src/assets/lipstick-s001.webp" width="800" height="800" alt="Открытая помада «Мягкий цвет»" data-active>
+          </div>
           <div id="product-model" class="product-model" hidden></div>
         </div>
         <button type="button" id="model-toggle" class="model-switch" aria-label="Посмотреть в 3D" aria-controls="product-model" aria-expanded="false">3D</button>
+        <div id="product-gallery" class="product-gallery" role="group" aria-label="Ракурсы помады" hidden>
+          <button type="button" class="gallery-arrow gallery-prev" aria-label="Предыдущий кадр" aria-controls="product-photos"></button>
+          <button type="button" class="gallery-arrow gallery-next" aria-label="Следующий кадр" aria-controls="product-photos"></button>
+          <div class="gallery-pagination"></div>
+        </div>
+        <div id="model-actions" class="product-controls" role="group" aria-label="Управление помадой" hidden>
+          <button type="button" id="cap-toggle" aria-label="Снять колпачок">
+            <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <rect x="4.5" y="4" width="12" height="7.5" rx="1.3"/>
+              <path d="M7 17v-3h7v3"/>
+              <rect x="4.5" y="17" width="12" height="7" rx="1.3"/>
+              <path class="action-direction" d="M22 20V8m-3 3 3-3 3 3"/>
+            </svg>
+          </button>
+          <button type="button" id="stick-toggle" aria-label="Выкрутить стик">
+            <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M6.5 17v-4h8v4M8 13V9a3.6 3.6 0 0 1 1.5-2.9l3-2.2c.5-.4 1-.1 1 .5V13"/>
+              <rect x="4.5" y="17" width="12" height="7" rx="1.3"/>
+              <path class="action-direction" d="M22 20V8m-3 3 3-3 3 3"/>
+            </svg>
+          </button>
+        </div>
         <p id="model-status" class="model-status" role="status"></p>
       </div>
       <section class="product-details" aria-labelledby="product-title">

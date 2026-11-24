@@ -37,10 +37,12 @@ body {
 
 .product-scene {
   position: relative;
-  inline-size: min(100cqi, 100cqb);
+  inline-size: min(100cqi, calc(100cqb - 2rem));
   aspect-ratio: 1;
+  translate: 0 -.75rem;
 }
 
+.product-photos,
 .product-poster,
 .product-model {
   position: absolute;
@@ -52,10 +54,15 @@ body {
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(.75rem 1rem 1rem #763b3138);
+  opacity: 0;
+}
+
+.product-poster[data-active] {
+  opacity: 1;
 }
 
 .product-model:not([data-ready]),
-.product-scene:has(.product-model[data-ready]:not([hidden])) .product-poster {
+.product-scene:has(.product-model[data-ready]:not([hidden])) .product-photos {
   visibility: hidden;
 }
 
@@ -139,8 +146,16 @@ h1 {
 
 .model-switch {
   position: absolute;
+  z-index: 1;
   inset-block-start: .75rem;
   inset-inline-end: .75rem;
+  font: inherit;
+  font-size: .875rem;
+  font-weight: 600;
+}
+
+.model-switch,
+.product-controls button {
   display: grid;
   place-items: center;
   inline-size: 3rem;
@@ -150,19 +165,158 @@ h1 {
   border-radius: 50%;
   color: #71443d;
   background: #fff7ef;
-  font: inherit;
-  font-size: .875rem;
-  font-weight: 600;
   cursor: pointer;
 }
 
-.model-switch:hover {
+.model-switch:hover,
+.product-controls button:not([aria-disabled="true"]):hover {
   background: #f0e0d8;
 }
 
-.model-switch:focus-visible {
+.model-switch:focus-visible,
+.product-gallery button:focus-visible,
+.product-controls button:focus-visible {
   outline: 2px solid #352322;
   outline-offset: 1px;
+}
+
+.product-controls {
+  position: absolute;
+  inset-inline-end: .75rem;
+  inset-block-end: .75rem;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.product-controls:not([hidden]) {
+  display: flex;
+}
+
+.product-controls svg {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+}
+
+.action-direction {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.product-controls button[data-reverse] .action-direction {
+  rotate: 180deg;
+}
+
+.product-controls button[aria-disabled="true"] {
+  background: #f4ded4;
+  cursor: default;
+}
+
+.product-gallery {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.product-gallery button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.gallery-arrow {
+  position: absolute;
+  inset-block: 0;
+  inline-size: 50%;
+  color: #fff;
+}
+
+.gallery-arrow:focus-visible {
+  outline-offset: -4px;
+}
+
+.gallery-prev {
+  inset-inline-start: 0;
+}
+
+.gallery-next {
+  inset-inline-end: 0;
+}
+
+.gallery-arrow::before {
+  content: '';
+  position: absolute;
+  inset-block-start: calc(50% - .75rem);
+  inline-size: .7rem;
+  block-size: .7rem;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  translate: 0 -50%;
+  opacity: 0;
+  filter: drop-shadow(0 1px 2px #65372d8c);
+  transition: opacity 180ms ease;
+}
+
+.gallery-prev::before {
+  inset-inline-start: 1.5rem;
+  rotate: 135deg;
+}
+
+.gallery-next::before {
+  inset-inline-end: 1.5rem;
+  rotate: -45deg;
+}
+
+.product-image:is(:hover, :has(.product-gallery :focus-visible)) .gallery-arrow::before {
+  opacity: 1;
+}
+
+@media (pointer: coarse), (max-width: 44rem) {
+  .gallery-arrow::before {
+    opacity: 1;
+  }
+}
+
+.gallery-pagination {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: .75rem;
+  display: flex;
+  justify-content: center;
+}
+
+.gallery-dot {
+  inline-size: 1.5rem;
+  block-size: 2.75rem;
+  border-radius: .375rem;
+}
+
+.gallery-dot::before {
+  content: '';
+  inline-size: .3125rem;
+  block-size: .3125rem;
+  border-radius: 999px;
+  background: #9e5f55;
+  transition: inline-size 240ms ease, background-color 180ms ease;
+}
+
+.gallery-dot:hover::before,
+.gallery-dot[aria-pressed="true"]::before {
+  background: #713e36;
+}
+
+.gallery-dot[aria-pressed="true"]::before {
+  inline-size: 1.125rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-arrow::before,
+  .gallery-dot::before {
+    transition: none;
+  }
 }
 
 .model-status {
@@ -179,6 +333,16 @@ h1 {
   padding: .5rem .75rem;
   border-radius: .35rem;
   background: #fff7ef;
+}
+
+#model-toggle[aria-expanded="true"] ~ .model-status {
+  color: #fff;
+  background: none;
+  text-shadow: 0 1px 2px #63352e;
+}
+
+.product-image:has(#product-gallery:not([hidden])) .model-status:not(:empty) {
+  inset-block-end: 4.25rem;
 }
 
 @media (max-width: 44rem) {
@@ -201,5 +365,10 @@ h1 {
     min-height: 0;
     aspect-ratio: auto;
     border-radius: 0;
+  }
+
+  .product-scene {
+    inline-size: min(100cqi, calc(100cqb - 3rem));
+    translate: 0 -1rem;
   }
 }

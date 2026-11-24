@@ -1,20 +1,15 @@
 import shades from './shades.json'
+import { setupProductGallery } from './product-gallery'
 import { setupProductModel } from './product-model'
 import './style.css'
 
 const options = document.querySelector<HTMLDivElement>('#shade-options')
-const poster = document.querySelector<HTMLImageElement>('#product-poster')
-const posters = import.meta.glob<string>('./assets/lipstick-*.webp', {
-  eager: true,
-  import: 'default',
-  query: '?url',
-})
+const setGalleryShade = setupProductGallery()
 const setModelColor = setupProductModel()
 
 if (options) {
   for (const [index, shade] of shades.entries()) {
     const color = `rgb(${shade.rgb.join(', ')})`
-    const posterUrl = posters[`./assets/lipstick-${shade.id.toLowerCase()}.webp`]
     const label = document.createElement('label')
     label.className = 'shade-option'
     label.style.setProperty('--swatch-color', color)
@@ -32,7 +27,7 @@ if (options) {
     options.append(label)
 
     const selectShade = () => {
-      if (poster && posterUrl) poster.src = posterUrl
+      setGalleryShade?.(shade.id.toLowerCase())
       setModelColor?.(color)
     }
 
