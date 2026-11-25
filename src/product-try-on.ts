@@ -17,7 +17,7 @@ function getCameraError(error: unknown) {
   if (error instanceof DOMException) {
     switch (error.name) {
       case 'NotAllowedError':
-        return 'Разрешите доступ к камере в настройках браузера и попробуйте снова.'
+        return 'Разрешите камеру в настройках браузера.'
       case 'NotFoundError':
         return 'Камера не найдена. Подключите камеру и попробуйте снова.'
       case 'NotReadableError':
@@ -92,7 +92,7 @@ export function setupProductTryOn(onClose: () => void) {
     start.hidden = false
     delete visual.dataset.tryOn
     onClose()
-    if (restoreFocus) start.focus()
+    if (restoreFocus) start.focus({ preventScroll: true })
     session.tracker?.close()
   }
 
@@ -122,7 +122,7 @@ export function setupProductTryOn(onClose: () => void) {
     start.hidden = true
     neutralOption.hidden = false
     exit.hidden = false
-    close.focus()
+    exit.focus({ preventScroll: true })
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -193,7 +193,7 @@ export function setupProductTryOn(onClose: () => void) {
             lipMask = maskTracker.update(face, sourceContext, time)
             if (lipMask) lastPaintedMask = time
             paint()
-            const message = time - lastPaintedMask < 350 ? '' : face ? 'Губы не распознаны' : 'Посмотрите в камеру'
+            const message = time - lastPaintedMask < 350 ? '' : 'Губы не распознаны'
             if (status.textContent !== message) status.textContent = message
           } catch (error) {
             console.error('Не удалось обработать кадр примерки', error)
