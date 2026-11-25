@@ -21,7 +21,7 @@ neutralInput?.addEventListener('change', () => {
 })
 
 if (options) {
-  for (const [index, shade] of shades.entries()) {
+  for (const shade of shades) {
     const color = `rgb(${shade.rgb.join(', ')})`
     const label = document.createElement('label')
     label.className = 'shade-option'
@@ -32,7 +32,7 @@ if (options) {
     input.type = 'radio'
     input.name = 'shade'
     input.value = shade.id
-    input.checked = index === 0
+    input.checked = shade.id === 'S001'
     input.setAttribute('aria-label', shade.name)
 
     const swatch = document.createElement('span')

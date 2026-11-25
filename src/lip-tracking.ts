@@ -10,6 +10,7 @@ const seamSamples = [[3, 17], [5, 15], [7, 13]] as const
 
 type Point = { x: number; y: number }
 type LipVisibility = 'visible' | 'partial' | 'missing'
+type ReadLipColor = (point: Point) => { chroma: number; lightness: number } | undefined
 
 export type LipMask = {
   path: Path2D
@@ -28,22 +29,22 @@ function distance(a: Point, b: Point) {
   return Math.hypot(a.x - b.x, a.y - b.y)
 }
 
-function getLipVisibility(outer: Point[], inner: Point[], mouthWidth: number, frame: CanvasRenderingContext2D): LipVisibility {
-  const getSkinSamplePoint = (index: number) => {
-    const border = outer[index]
-    const opening = inner[index]
-    return border && opening && mix(border, opening, -.7)
-  }
-  // The skin samples can extend past the lip contour when the lips are pursed.
-  const sampleBounds = [...outer, ...inner, ...seamSamples.flat().flatMap(index => getSkinSamplePoint(index) ?? [])]
-  const x = Math.max(0, Math.floor(Math.min(...sampleBounds.map(point => point.x))))
-  const y = Math.max(0, Math.floor(Math.min(...sampleBounds.map(point => point.y))))
-  const rightEdge = Math.min(frame.canvas.width, Math.ceil(Math.max(...sampleBounds.map(point => point.x))) + 1)
-  const bottomEdge = Math.min(frame.canvas.height, Math.ceil(Math.max(...sampleBounds.map(point => point.y))) + 1)
-  if (rightEdge <= x || bottomEdge <= y) return 'missing'
+function getSkinSamplePoint(outer: Point[], inner: Point[], index: number) {
+  const border = outer[index]
+  const opening = inner[index]
+  return border && opening && mix(border, opening, -.7)
+}
+
+function createLipColorSampler(outer: Point[], inner: Point[], padding: number, frame: CanvasRenderingContext2D): ReadLipColor | undefined {
+  const sampleBounds = [...outer, ...inner, ...seamSamples.flat().flatMap(index => getSkinSamplePoint(outer, inner, index) ?? [])]
+  const x = Math.max(0, Math.floor(Math.min(...sampleBounds.map(point => point.x)) - padding))
+  const y = Math.max(0, Math.floor(Math.min(...sampleBounds.map(point => point.y)) - padding))
+  const rightEdge = Math.min(frame.canvas.width, Math.ceil(Math.max(...sampleBounds.map(point => point.x)) + padding) + 1)
+  const bottomEdge = Math.min(frame.canvas.height, Math.ceil(Math.max(...sampleBounds.map(point => point.y)) + padding) + 1)
+  if (rightEdge <= x || bottomEdge <= y) return
 
   const pixels = frame.getImageData(x, y, rightEdge - x, bottomEdge - y)
-  const readColor = (point: Point) => {
+  return point => {
     const column = Math.round(point.x) - x
     const row = Math.round(point.y) - y
     if (column < 0 || column >= pixels.width || row < 0 || row >= pixels.height) return
@@ -53,14 +54,16 @@ function getLipVisibility(outer: Point[], inner: Point[], mouthWidth: number, fr
     const b = pixels.data[offset + 2] ?? 0
     return { chroma: (r + b - 2 * g) / Math.max(100, r + g + b), lightness: (r + 2 * g + b) * .25 }
   }
+}
 
+function getLipVisibility(outer: Point[], inner: Point[], mouthWidth: number, pucker: number, readColor: ReadLipColor): LipVisibility {
   const readLipBand = (index: number) => {
     const border = outer[index]
     const opening = inner[index]
     if (!border || !opening || distance(border, opening) < 1) return
 
     const band = [.35, .5, .65].map(position => readColor(mix(border, opening, position)))
-    const skinSamplePoint = getSkinSamplePoint(index)
+    const skinSamplePoint = getSkinSamplePoint(outer, inner, index)
     const skin = skinSamplePoint && readColor(skinSamplePoint)
     if (!skin || band.some(color => !color)) return
     const lightness = band.reduce((total, color) => total + (color?.lightness ?? 0), 0) / band.length
@@ -95,11 +98,48 @@ function getLipVisibility(outer: Point[], inner: Point[], mouthWidth: number, fr
   const lowerOpening = inner[15]
   const mouthOpen = upperOpening && lowerOpening && distance(upperOpening, lowerOpening) > mouthWidth * .07
   if (mouthOpen && bandSupport >= 3 && upperSupport > 0 && lowerSupport > 0) return 'visible'
+  // The seam can disappear in a pucker even when both lip bands are fully visible.
+  if (pucker > .5 && bandSupport === seamSamples.length * 2) return 'visible'
 
   const openings = columns.filter(column => column.opening)
   // During a head turn a single column can still distinguish both lip bands and the opening.
   if (bandSupport >= 2 && (openings.length >= 2 || openings.some(column => column.upper && column.lower))) return 'visible'
   return bandSupport > 0 || openings.length >= 2 ? 'partial' : 'missing'
+}
+
+function findLipEdgeInset(border: Point, opening: Point, inset: number, step: number, readColor: ReadLipColor) {
+  const thickness = distance(border, opening)
+  if (thickness < 1) return inset
+
+  const interval = step / thickness
+  const lipSample = readColor(mix(border, opening, .45))
+  const skinSample = readColor(mix(border, opening, -5 * interval))
+  if (!lipSample || !skinSample) return inset
+  const range = lipSample.chroma - skinSample.chroma
+  if (range < .025) return inset
+
+  // Keep weak or ambiguous edges close to the inset from the face model.
+  const confidence = Math.min(1, (range - .025) / .035)
+  const modelWeight = .0005
+  let total = modelWeight
+  let weightedOffset = -inset * modelWeight
+  // Search both sides of the landmark for a local drop in lip chroma toward the skin.
+  for (let offset = -3; offset <= 4; offset++) {
+    const outward = offset * interval
+    if (outward < -.65) continue
+    const lip = readColor(mix(border, opening, -outward + interval))
+    const skin = readColor(mix(border, opening, -outward - interval))
+    if (!lip || !skin) continue
+
+    const contrast = lip.chroma - skin.chroma
+    // Favor the transition near skin color over a strong gradient within the lip.
+    const position = ((lip.chroma + skin.chroma) / 2 - skinSample.chroma) / range
+    const difference = (position - .35) / .25
+    const weight = confidence * Math.max(0, contrast - .014 - .0015 * Math.abs(offset)) ** 2 / (1 + difference ** 2)
+    total += weight
+    weightedOffset += outward * weight
+  }
+  return -weightedOffset / total
 }
 
 export function createLipTracker() {
@@ -121,21 +161,45 @@ function readLipFrame(face: NormalizedLandmark[], frame: CanvasRenderingContext2
   const inner = innerLip.map(project).filter(point => point !== undefined)
   const left = outer[0]
   const right = outer[10]
-  const upper = outer[5]
-  const lower = outer[15]
-  if (outer.length !== outerLip.length || inner.length !== innerLip.length || !left || !right || !upper || !lower) return
+  const [upper, lower, upperOpening, lowerOpening] = [outer[5], outer[15], inner[5], inner[15]]
+  if (outer.length !== outerLip.length || inner.length !== innerLip.length ||
+    !left || !right || !upper || !lower || !upperOpening || !lowerOpening) return
 
   const mouthWidth = distance(left, right)
   if (mouthWidth < 12 || distance(upper, lower) < 2) return
 
-  const inset = outer.map((point, index) => {
-    const opening = inner[index]
-    const isCorner = index === 0 || index === 10
-    return opening ? mix(point, opening, isCorner ? .45 : .08) : point
+  const thickness = (distance(upper, upperOpening) + distance(lower, lowerOpening)) / 2
+  // Treat thick, pursed lips separately from a large opening between the lips.
+  const pucker = Math.max(0, Math.min(1, (2 * thickness / mouthWidth - .4) / .35))
+  const wideOpening = Math.max(0, Math.min(1, (distance(upperOpening, lowerOpening) / mouthWidth - .5) / .5))
+  const step = Math.max(1, Math.min(3, mouthWidth * .03))
+  const refineBorder = pucker > 0 || wideOpening > 0
+  const readColor = createLipColorSampler(outer, inner, refineBorder ? 5 * step : 0, frame)
+  const visibility = readColor ? getLipVisibility(outer, inner, mouthWidth, pucker, readColor) : 'missing'
+  const insets = outer.map((point, index) => mix(point, inner[index] ?? point, index === 0 || index === 10 ? .45 : .08))
+  const border = !readColor || !refineBorder || visibility === 'missing' ? insets : insets.map((inset, index) => {
+    // At a wide opening, recover the lower rim and taper the correction at the corners.
+    const lowerLip = wideOpening * Math.max(0, Math.min(1, (index - 10) / 2, (outer.length - index) / 2))
+    if (pucker === 0 && lowerLip === 0) return inset
+    const point = outer[index] ?? inset
+    const opening = inner[index] ?? point
+    const amount = index === 0 || index === 10 ? .45 : .08
+    const edgeInset = findLipEdgeInset(point, opening, amount, step, readColor)
+    const strength = edgeInset < amount ? Math.max(pucker, lowerLip * .92) : pucker
+    return mix(inset, mix(point, opening, edgeInset), strength)
+  })
+  // Smooth only the correction, preserving the original shape where colors are inconclusive.
+  const smoothed = border === insets ? border : border.map((point, index) => {
+    const before = (index + border.length - 1) % border.length
+    const after = (index + 1) % border.length
+    const center = insets[index] ?? point
+    const neighbors = mix(border[before] ?? point, border[after] ?? point, .5)
+    const base = mix(insets[before] ?? center, insets[after] ?? center, .5)
+    return mix(point, { x: center.x + neighbors.x - base.x, y: center.y + neighbors.y - base.y }, .4)
   })
   const path = new Path2D()
-  for (const outline of [inset, inner]) {
-    const roundCorners = outline === inset
+  for (const outline of [smoothed, inner]) {
+    const roundCorners = outline === smoothed
     for (const [index, point] of outline.entries()) {
       const next = outline[(index + 1) % outline.length] ?? point
       if (index === 0) {
@@ -152,16 +216,15 @@ function readLipFrame(face: NormalizedLandmark[], frame: CanvasRenderingContext2
     path.closePath()
   }
 
-  const outline = [...inset, ...inner]
+  const outline = [...smoothed, ...inner]
   const x = Math.max(0, Math.floor(Math.min(...outline.map(point => point.x))) - 1)
   const y = Math.max(0, Math.floor(Math.min(...outline.map(point => point.y))) - 1)
   const rightEdge = Math.min(width, Math.ceil(Math.max(...outline.map(point => point.x))) + 1)
   const bottomEdge = Math.min(height, Math.ceil(Math.max(...outline.map(point => point.y))) + 1)
   if (rightEdge <= x || bottomEdge <= y) return
-  const thickness = (distance(upper, inner[5] ?? upper) + distance(lower, inner[15] ?? lower)) / 2
   const feather = Math.min(2, mouthWidth * .025, thickness * .33)
   const mask: LipMask = { path, feather, x, y, width: rightEdge - x, height: bottomEdge - y }
-  return { mask, visibility: getLipVisibility(outer, inner, mouthWidth, frame) }
+  return { mask, visibility }
 }
 
 export function createLipMaskTracker() {
