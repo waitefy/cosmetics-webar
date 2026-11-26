@@ -2,6 +2,8 @@ import type { FaceLandmarker } from '@mediapipe/tasks-vision'
 import type { LipMask } from './lip-tracking'
 import { createLipRenderer } from './lip-rendering'
 
+type ShadeColor = readonly number[] | null
+
 type TryOnSession = {
   stream?: MediaStream
   tracker?: FaceLandmarker
@@ -32,6 +34,8 @@ export function setupProductTryOn(onClose: () => void) {
   const panel = document.querySelector<HTMLDivElement>('#product-try-on')
   const video = document.querySelector<HTMLVideoElement>('#try-on-video')
   const view = document.querySelector<HTMLCanvasElement>('#try-on-view')
+  const rightView = document.querySelector<HTMLCanvasElement>('#try-on-right-view')
+  const rightLayer = document.querySelector<HTMLElement>('.try-on-comparison-layer')
   const start = document.querySelector<HTMLButtonElement>('#try-on-start')
   const close = document.querySelector<HTMLButtonElement>('#try-on-close')
   const exit = document.querySelector<HTMLButtonElement>('#try-on-exit')
@@ -39,25 +43,38 @@ export function setupProductTryOn(onClose: () => void) {
   const status = document.querySelector<HTMLElement>('#try-on-status')
   const errorStatus = document.querySelector<HTMLElement>('#try-on-error')
   const context = view?.getContext('2d')
-  if (!visual || !panel || !video || !view || !start || !close || !exit || !neutralOption || !status || !errorStatus || !context) return
+  const rightContext = rightView?.getContext('2d')
+  if (!visual || !panel || !video || !view || !rightView || !rightLayer || !start || !close || !exit ||
+      !neutralOption || !status || !errorStatus || !context || !rightContext) return
   const renderLips = createLipRenderer(context)
+  const renderRightLips = createLipRenderer(rightContext)
 
   let activeSession: TryOnSession | undefined
   let capturedFrame: CanvasRenderingContext2D | undefined
   let lipMask: LipMask | undefined
-  let color: readonly number[] | null = null
+  let color: ShadeColor = null
+  let comparedColor: ShadeColor = null
+  let comparing = false
+  let showingRight = false
+
+  const hasShade = () => color !== null || comparedColor !== null
 
   const paint = () => {
-    if (!capturedFrame || !lipMask || !color) {
+    if (!capturedFrame || !lipMask || !hasShade()) {
       context.clearRect(0, 0, view.width, view.height)
+      if (showingRight) rightContext.clearRect(0, 0, rightView.width, rightView.height)
       return
     }
     context.drawImage(capturedFrame.canvas, 0, 0)
-    renderLips?.(capturedFrame, lipMask, color)
+    if (color) renderLips?.(capturedFrame, lipMask, color)
+    if (showingRight) {
+      rightContext.drawImage(capturedFrame.canvas, 0, 0)
+      if (comparedColor) renderRightLips?.(capturedFrame, lipMask, comparedColor)
+    }
   }
 
   const updateTracking = (session: TryOnSession) => {
-    if (!color) {
+    if (!hasShade()) {
       if (session.frame !== undefined) cancelAnimationFrame(session.frame)
       session.frame = undefined
       capturedFrame = undefined
@@ -73,6 +90,23 @@ export function setupProductTryOn(onClose: () => void) {
     }
   }
 
+  const updateOutput = () => {
+    if (activeSession) updateTracking(activeSession)
+    paint()
+  }
+
+  const clearRightView = () => {
+    showingRight = false
+    comparedColor = null
+    rightContext.clearRect(0, 0, rightView.width, rightView.height)
+  }
+
+  rightLayer.addEventListener('transitionend', (event) => {
+    if (event.propertyName !== 'opacity' || comparing) return
+    clearRightView()
+    updateOutput()
+  })
+
   const stopTryOn = (restoreFocus = true) => {
     const session = activeSession
     if (!session) return
@@ -84,6 +118,8 @@ export function setupProductTryOn(onClose: () => void) {
     video.srcObject = null
     capturedFrame = undefined
     lipMask = undefined
+    comparing = false
+    clearRightView()
     paint()
     status.textContent = ''
     panel.hidden = true
@@ -177,8 +213,8 @@ export function setupProductTryOn(onClose: () => void) {
             if (source.width !== video.videoWidth || source.height !== video.videoHeight) {
               source.width = video.videoWidth
               source.height = video.videoHeight
-              view.width = source.width
-              view.height = source.height
+              view.width = rightView.width = source.width
+              view.height = rightView.height = source.height
               capturedFrame = undefined
               lipMask = undefined
             }
@@ -224,9 +260,20 @@ export function setupProductTryOn(onClose: () => void) {
   })
   window.addEventListener('pagehide', () => stopTryOn(false))
 
-  return (nextColor: readonly number[] | null) => {
-    color = nextColor
-    if (activeSession) updateTracking(activeSession)
-    paint()
+  return {
+    setShade(nextColor: ShadeColor) {
+      color = nextColor
+      updateOutput()
+    },
+    setComparedShade(enabled: boolean, nextColor: ShadeColor) {
+      comparing = enabled
+      if (enabled) {
+        showingRight = true
+        comparedColor = nextColor
+      } else if (Number(getComputedStyle(rightLayer).opacity) === 0) {
+        clearRightView()
+      }
+      updateOutput()
+    },
   }
 }

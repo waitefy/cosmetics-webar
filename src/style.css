@@ -26,6 +26,8 @@
     min(calc(1.5vw - .8rem), calc(2.5svh - .6rem), .97vw, 1.8svh),
     225%
   );
+  --ui-motion: 400ms;
+  --ui-ease: cubic-bezier(.22, .7, .28, 1);
   --ink: #2a1717;
   --berry: color-mix(in srgb, var(--chosen-shade) 24%, #2c171e);
   --muted: #4e3435;
@@ -151,9 +153,64 @@ body {
   opacity: 1;
 }
 
-.product-model:not([data-ready]),
+.product-model[hidden],
+.product-gallery[hidden] { display: block; }
+.product-controls[hidden] { display: flex; }
+
+.product-photos,
+.product-model,
+.product-gallery,
+.product-controls {
+  transition: opacity var(--ui-motion) var(--ui-ease),
+    scale var(--ui-motion) var(--ui-ease),
+    translate var(--ui-motion) var(--ui-ease),
+    visibility var(--ui-motion);
+}
+
+.product-model,
+.product-gallery[hidden],
+.product-controls[hidden],
 .product-scene:has(.product-model[data-ready]:not([hidden])) .product-photos {
+  opacity: 0;
   visibility: hidden;
+}
+
+.product-model {
+  scale: .965;
+  pointer-events: none;
+}
+
+.product-model[data-ready]:not([hidden]) {
+  opacity: 1;
+  scale: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.product-scene:has(.product-model[data-ready]:not([hidden])) .product-photos { scale: 1.035; }
+.product-gallery[hidden] button { pointer-events: none; }
+.product-controls[hidden] { translate: 0 .35rem; }
+
+#model-toggle > span {
+  grid-area: 1 / 1;
+  transition: opacity 240ms ease, scale 300ms var(--ui-ease);
+}
+
+#model-toggle[aria-expanded="false"] > :last-child,
+#model-toggle[aria-expanded="true"] > :first-child {
+  opacity: 0;
+  scale: .78;
+}
+
+#model-status:not(:empty) {
+  transition: opacity 220ms ease, translate 280ms var(--ui-ease);
+}
+
+@starting-style {
+  #model-status:not(:empty) {
+    opacity: 0;
+    translate: 0 .25rem;
+  }
 }
 
 .product-model model-viewer {
@@ -447,6 +504,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :root { --ui-motion: 0ms; }
+
+  #model-toggle > span,
+  #model-status:not(:empty),
   .gallery-arrow::before,
   .gallery-dot::before {
     transition: none;

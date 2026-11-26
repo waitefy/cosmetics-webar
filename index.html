@@ -20,15 +20,18 @@
           <div id="product-photos" class="product-photos">
             <img id="product-poster" class="product-poster" src="/src/assets/lipstick-s001.webp" width="800" height="800" alt="Открытая помада «Мягкий цвет»" data-active>
           </div>
-          <div id="product-model" class="product-model" hidden></div>
+          <div id="product-model" class="product-model" hidden inert></div>
         </div>
-        <button type="button" id="model-toggle" class="model-switch" aria-label="Посмотреть в 3D" aria-controls="product-model" aria-expanded="false">3D</button>
+        <button type="button" id="model-toggle" class="model-switch" aria-label="Посмотреть в 3D" aria-controls="product-model" aria-expanded="false">
+          <span aria-hidden="true">3D</span>
+          <span aria-hidden="true">2D</span>
+        </button>
         <div id="product-gallery" class="product-gallery" role="group" aria-label="Ракурсы помады" hidden>
           <button type="button" class="gallery-arrow gallery-prev" aria-label="Предыдущий кадр" aria-controls="product-photos"></button>
           <button type="button" class="gallery-arrow gallery-next" aria-label="Следующий кадр" aria-controls="product-photos"></button>
           <div class="gallery-pagination"></div>
         </div>
-        <div id="model-actions" class="product-controls" role="group" aria-label="Управление помадой" hidden>
+        <div id="model-actions" class="product-controls" role="group" aria-label="Управление помадой" hidden inert>
           <button type="button" id="cap-toggle" aria-label="Снять колпачок">
             <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
               <rect x="4.5" y="4" width="12" height="7.5" rx="1.3"/>
@@ -49,6 +52,32 @@
         <div id="product-try-on" class="try-on" role="group" aria-label="Виртуальная примерка" hidden>
           <video id="try-on-video" muted playsinline aria-hidden="true"></video>
           <canvas id="try-on-view" aria-hidden="true"></canvas>
+          <div class="try-on-comparison-layer" aria-hidden="true">
+            <canvas id="try-on-right-view"></canvas>
+          </div>
+          <button type="button" id="compare-mode" class="compare-mode" aria-expanded="false"
+              aria-controls="compare-second-palette" aria-label="Сравнить оттенки" title="Сравнить оттенки">
+            <svg class="compare-icon-compare" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              <path d="M3.8 14.1C7.3 12.6 8.9 9.3 11.4 9.7c1 .1 1.8.9 2.6 1.4.8-.5 1.6-1.3 2.6-1.4 2.5-.4 4.1 2.9 7.6 4.4-3.5 3.3-6.3 5.4-10.2 5.4s-6.7-2.1-10.2-5.4Z" fill="#eba0b5"/>
+              <path d="M14 11.1c.8-.5 1.6-1.3 2.6-1.4 2.5-.4 4.1 2.9 7.6 4.4-3.5 3.3-6.3 5.4-10.2 5.4Z" fill="#e77782"/>
+              <path d="M3.8 14.1C7.3 12.6 8.9 9.3 11.4 9.7c1 .1 1.8.9 2.6 1.4.8-.5 1.6-1.3 2.6-1.4 2.5-.4 4.1 2.9 7.6 4.4-3.5 3.3-6.3 5.4-10.2 5.4s-6.7-2.1-10.2-5.4Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.35"/>
+              <path d="M4.4 14.2c4.2.2 6-.5 7.3-.1 1.4.4 3.2.4 4.6 0 1.3-.4 3.1.3 7.3.1M14 7.8v13.7" stroke="currentColor" stroke-linecap="round" stroke-width="1.2"/>
+            </svg>
+            <svg class="compare-icon-single" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              <path d="M3.8 14.1C7.3 12.6 8.9 9.3 11.4 9.7c1 .1 1.8.9 2.6 1.4.8-.5 1.6-1.3 2.6-1.4 2.5-.4 4.1 2.9 7.6 4.4-3.5 3.3-6.3 5.4-10.2 5.4s-6.7-2.1-10.2-5.4Z" fill="#eba0b5" stroke="currentColor" stroke-linejoin="round" stroke-width="1.35"/>
+              <path d="M4.4 14.2c4.2.2 6-.5 7.3-.1 1.4.4 3.2.4 4.6 0 1.3-.4 3.1.3 7.3.1" stroke="currentColor" stroke-linecap="round" stroke-width="1.2"/>
+            </svg>
+          </button>
+          <div class="compare-split" hidden inert>
+            <div id="compare-slider" class="compare-slider" role="slider" tabindex="0"
+              aria-label="Граница сравнения" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+              <span class="compare-slider-handle" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m8 8-4 4 4 4m8-8 4 4-4 4"/>
+                </svg>
+              </span>
+            </div>
+          </div>
           <button type="button" id="try-on-close" class="model-switch" aria-label="Закрыть примерку">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" focusable="false">
               <path d="m6 6 12 12M18 6 6 18"/>
@@ -62,15 +91,28 @@
         <p class="product-intro">От пыльного розового до яркого голубого. Выберите цвет и рассмотрите помаду с разных ракурсов.</p>
       </div>
       <div class="shade-panel">
-        <fieldset class="palette">
-          <legend>Оттенок <span id="selected-shade" class="selected-shade">Розовый</span></legend>
-          <div id="shade-options" class="shade-options">
-            <label id="try-on-neutral" class="shade-option" title="Без оттенка" hidden>
-              <input type="radio" name="shade" id="shade-none" value="none" aria-label="Без оттенка">
-              <span class="swatch swatch-neutral" aria-hidden="true"></span>
-            </label>
+        <div class="palette compare-palettes">
+          <div class="compare-palette-headings">
+            <div id="compare-first-heading" class="compare-palette-heading"><span>Оттенок<span id="compare-first-number" aria-hidden="true" hidden> 1</span></span> <span class="compare-first-value"><span id="selected-shade" class="selected-shade">Розовый</span></span></div>
+            <div id="compare-second-heading" class="compare-palette-heading" hidden inert>
+              <div class="compare-second-heading-text">
+                <span>Оттенок 2</span>
+                <span id="compare-second-shade" class="selected-shade"></span>
+              </div>
+            </div>
           </div>
-        </fieldset>
+          <fieldset class="compare-palette-group" aria-labelledby="compare-first-heading">
+            <div id="shade-options" class="shade-options">
+              <label id="try-on-neutral" class="shade-option" title="Без оттенка" hidden>
+                <input type="radio" name="shade" id="shade-none" value="none" aria-label="Без оттенка">
+                <span class="swatch swatch-neutral" aria-hidden="true"></span>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset id="compare-second-palette" class="compare-palette-group" aria-labelledby="compare-second-heading" hidden inert>
+            <div id="compare-second-options" class="shade-options"></div>
+          </fieldset>
+        </div>
         <button type="button" id="try-on-start" class="try-on-start" aria-controls="product-try-on" aria-describedby="try-on-hint">Примерить оттенок</button>
         <button type="button" id="try-on-exit" class="try-on-exit" aria-controls="product-try-on" hidden>Выйти из примерки</button>
         <p id="try-on-hint" class="try-on-hint">Понадобится фронтальная камера</p>

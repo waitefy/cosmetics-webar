@@ -2,7 +2,9 @@ import shades from './shades.json'
 import { setupProductGallery } from './product-gallery'
 import { setupProductModel } from './product-model'
 import { setupProductTryOn } from './product-try-on'
+import { setupShadeComparison } from './shade-comparison'
 import './style.css'
+import './shade-comparison.css'
 
 const options = document.querySelector<HTMLDivElement>('#shade-options')
 const selectedShade = document.querySelector<HTMLSpanElement>('#selected-shade')
@@ -11,13 +13,16 @@ const neutralInput = document.querySelector<HTMLInputElement>('#shade-none')
 const setGalleryShade = setupProductGallery()
 const setModelColor = setupProductModel()
 let restoreShade: (() => void) | undefined
-const setTryOnColor = setupProductTryOn(() => {
+const tryOn = setupProductTryOn(() => {
+  comparison?.reset()
   if (neutralInput?.checked) restoreShade?.()
 })
+const comparison = setupShadeComparison((enabled, shade) => tryOn?.setComparedShade(enabled, shade?.rgb ?? null))
 
 neutralInput?.addEventListener('change', () => {
   if (selectedShade) selectedShade.textContent = 'Без оттенка'
-  setTryOnColor?.(null)
+  comparison?.setFirstShade()
+  tryOn?.setShade(null)
 })
 
 if (options) {
@@ -48,7 +53,8 @@ if (options) {
       document.documentElement.style.setProperty('--chosen-shade', color)
       setGalleryShade?.(shade.id.toLowerCase())
       setModelColor?.(color)
-      setTryOnColor?.(shade.rgb)
+      comparison?.setFirstShade(shade)
+      tryOn?.setShade(shade.rgb)
     }
 
     input.addEventListener('change', selectShade)

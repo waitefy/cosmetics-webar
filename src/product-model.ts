@@ -15,12 +15,13 @@ export function setupProductModel() {
   const panel = document.querySelector<HTMLDivElement>('#product-model')
   const toggle = document.querySelector<HTMLButtonElement>('#model-toggle')
   const status = document.querySelector<HTMLParagraphElement>('#model-status')
+  const photos = document.querySelector<HTMLDivElement>('#product-photos')
   const gallery = document.querySelector<HTMLDivElement>('#product-gallery')
   const actions = document.querySelector<HTMLDivElement>('#model-actions')
   const cap = document.querySelector<HTMLButtonElement>('#cap-toggle')
   const stick = document.querySelector<HTMLButtonElement>('#stick-toggle')
 
-  if (!panel || !toggle || !status || !gallery || !actions || !cap || !stick) return
+  if (!panel || !toggle || !status || !photos || !gallery || !actions || !cap || !stick) return
 
   let viewer: ModelViewerElement | undefined
   let color = ''
@@ -81,14 +82,28 @@ export function setupProductModel() {
   cap.addEventListener('click', () => moveTo(pose === closed ? capOff : closed))
   stick.addEventListener('click', () => moveTo(pose === stickOut ? capOff : stickOut))
 
+  const updateModeControls = () => {
+    const showingModel = !panel.hidden && panel.hasAttribute('data-ready')
+    gallery.hidden = gallery.inert = photos.inert = showingModel
+    actions.hidden = actions.inert = !showingModel
+  }
+
   const setOpen = (open: boolean) => {
-    panel.hidden = !open
-    gallery.hidden = open
-    actions.hidden = !open || !panel.hasAttribute('data-ready')
-    toggle.textContent = open ? '2D' : '3D'
+    panel.hidden = panel.inert = !open
+    updateModeControls()
     toggle.setAttribute('aria-label', open ? 'Вернуться к 2D-изображению' : 'Посмотреть в 3D')
     toggle.setAttribute('aria-expanded', String(open))
   }
+
+  const resetOrbit = () => {
+    if (!viewer?.loaded) return
+    viewer.cameraOrbit = initialOrbit
+    viewer.jumpCameraToGoal()
+  }
+
+  panel.addEventListener('transitionend', (event) => {
+    if (event.target === panel && event.propertyName === 'opacity' && panel.hidden) resetOrbit()
+  })
 
   const showError = (message: string) => {
     viewer?.remove()
@@ -108,10 +123,7 @@ export function setupProductModel() {
     setOpen(open)
     status.textContent = ''
     if (!open) {
-      if (viewer?.loaded) {
-        viewer.cameraOrbit = initialOrbit
-        viewer.jumpCameraToGoal()
-      }
+      if (Number(getComputedStyle(panel).opacity) === 0) resetOrbit()
       return
     }
 
@@ -151,7 +163,7 @@ export function setupProductModel() {
         model.currentTime = closed
         updateColor()
         panel.setAttribute('data-ready', '')
-        actions.hidden = panel.hidden
+        updateModeControls()
         status.textContent = ''
       })
       model.addEventListener('error', () => {
