@@ -512,7 +512,6 @@ body {
 
   #model-toggle > span,
   #model-status:not(:empty),
-  .try-on,
   .gallery-arrow::before,
   .gallery-dot::before {
     transition: none;
@@ -549,13 +548,6 @@ body {
   position: absolute;
   inset: 0;
   background: #352322;
-  transition: opacity var(--try-on-exit-motion) var(--ui-ease);
-}
-
-@starting-style {
-  .try-on:not([hidden]) {
-    opacity: 0;
-  }
 }
 
 .try-on-feed {
@@ -702,11 +694,11 @@ body {
     border-radius: 0;
   }
 
-  .product-image[data-try-on-expanded] {
+  .product-image[data-try-on] {
     grid-row: intro-start / visual-end;
   }
 
-  .product:has(.product-image[data-try-on-expanded]) .product-titlegroup {
+  .product:has(.product-image[data-try-on]) .product-titlegroup {
     visibility: hidden;
   }
 

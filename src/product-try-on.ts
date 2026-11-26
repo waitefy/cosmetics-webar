@@ -9,7 +9,6 @@ type TryOnSession = {
   tracker?: FaceLandmarker
   track?: FrameRequestCallback
   frame?: number
-  darkenTimer?: number
 }
 
 function stopStream(stream: MediaStream) {
@@ -81,13 +80,14 @@ export function setupProductTryOn(onClose: () => void) {
       session.frame = undefined
       capturedFrame = undefined
       lipMask = undefined
-      if (session.stream) status.textContent = ''
+      status.textContent = ''
       return
     }
 
-    if (session.track && session.frame === undefined) {
-      session.frame = requestAnimationFrame(session.track)
-    } else if (!session.track && session.stream) {
+    if (session.track) {
+      if (status.textContent === 'Загрузка примерки…') status.textContent = ''
+      if (session.frame === undefined) session.frame = requestAnimationFrame(session.track)
+    } else if (session.stream) {
       status.textContent = 'Загрузка примерки…'
     }
   }
@@ -114,7 +114,6 @@ export function setupProductTryOn(onClose: () => void) {
     if (!session) return
 
     activeSession = undefined
-    clearTimeout(session.darkenTimer)
     if (session.frame !== undefined) cancelAnimationFrame(session.frame)
     if (session.stream) stopStream(session.stream)
     video.pause()
@@ -133,7 +132,6 @@ export function setupProductTryOn(onClose: () => void) {
     exit.hidden = true
     start.hidden = false
     delete visual.dataset.tryOn
-    delete visual.dataset.tryOnExpanded
     visual.toggleAttribute('data-try-on-ended', cameraWasReady)
     onClose()
     if (restoreFocus) start.focus({ preventScroll: true })
@@ -163,40 +161,20 @@ export function setupProductTryOn(onClose: () => void) {
     panel.hidden = false
     scene.inert = true
     visual.dataset.tryOn = ''
-    status.textContent = 'Разрешите доступ к камере'
-    let scrimReady = matchMedia('(prefers-reduced-motion: reduce)').matches
-    let cameraReady = false
-    const revealCamera = () => {
-      if (activeSession === session && scrimReady && cameraReady) {
-        panel.dataset.cameraReady = ''
-      }
-    }
-    const finishDarken = () => {
-      if (activeSession !== session || scrimReady) return
-      scrimReady = true
-      visual.dataset.tryOnExpanded = ''
-      revealCamera()
-    }
-    if (scrimReady) {
-      visual.dataset.tryOnExpanded = ''
-    } else {
-      const onFadeIn = (event: TransitionEvent) => {
-        if (event.target === panel && event.propertyName === 'opacity') {
-          panel.removeEventListener('transitionend', onFadeIn)
-          finishDarken()
-        }
-      }
-      panel.addEventListener('transitionend', onFadeIn)
-      session.darkenTimer = window.setTimeout(() => {
-        panel.removeEventListener('transitionend', onFadeIn)
-        finishDarken()
-      }, 220)
-    }
+    status.textContent = ''
     start.hidden = true
     neutralOption.hidden = neutralOption.inert = false
     exit.hidden = false
     exit.focus({ preventScroll: true })
 
+    let permissionState: PermissionState | undefined
+    try {
+      permissionState = (await navigator.permissions?.query({ name: 'camera' as PermissionName }))?.state
+    } catch {
+      // Permissions API may not support querying camera state.
+    }
+    if (activeSession !== session) return
+    status.textContent = permissionState === 'granted' ? (hasShade() ? 'Загрузка примерки…' : '') : 'Разрешите доступ к камере'
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
@@ -279,8 +257,7 @@ export function setupProductTryOn(onClose: () => void) {
 
       session.track = track
       updateTracking(session)
-      cameraReady = true
-      revealCamera()
+      panel.dataset.cameraReady = ''
     } catch (error) {
       if (activeSession === session) console.error('Не удалось загрузить модель примерки', error)
       fail(session, 'Не удалось загрузить примерку. Попробуйте ещё раз.')
