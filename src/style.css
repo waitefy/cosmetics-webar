@@ -693,6 +693,14 @@ body {
     border-radius: 0;
   }
 
+  .product-image[data-try-on] {
+    grid-row: intro-start / visual-end;
+  }
+
+  .product:has(.product-image[data-try-on]) .product-titlegroup {
+    visibility: hidden;
+  }
+
   .product-scene {
     translate: 0 -1rem;
   }
@@ -711,7 +719,6 @@ body {
   }
 
   .try-on-start[hidden],
-  .try-on .model-switch,
   #try-on-start[hidden] ~ .try-on-hint {
     display: none;
   }
