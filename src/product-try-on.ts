@@ -31,6 +31,7 @@ function getCameraError(error: unknown) {
 
 export function setupProductTryOn(onClose: () => void) {
   const visual = document.querySelector<HTMLElement>('.product-image')
+  const scene = visual?.querySelector<HTMLElement>('.product-scene')
   const panel = document.querySelector<HTMLDivElement>('#product-try-on')
   const video = document.querySelector<HTMLVideoElement>('#try-on-video')
   const view = document.querySelector<HTMLCanvasElement>('#try-on-view')
@@ -44,7 +45,7 @@ export function setupProductTryOn(onClose: () => void) {
   const errorStatus = document.querySelector<HTMLElement>('#try-on-error')
   const context = view?.getContext('2d')
   const rightContext = rightView?.getContext('2d')
-  if (!visual || !panel || !video || !view || !rightView || !rightLayer || !start || !close || !exit ||
+  if (!visual || !scene || !panel || !video || !view || !rightView || !rightLayer || !start || !close || !exit ||
       !neutralOption || !status || !errorStatus || !context || !rightContext) return
   const renderLips = createLipRenderer(context)
   const renderRightLips = createLipRenderer(rightContext)
@@ -122,11 +123,15 @@ export function setupProductTryOn(onClose: () => void) {
     clearRightView()
     paint()
     status.textContent = ''
+    const cameraWasReady = panel.hasAttribute('data-camera-ready')
+    delete panel.dataset.cameraReady
     panel.hidden = true
-    neutralOption.hidden = true
+    scene.inert = false
+    neutralOption.hidden = neutralOption.inert = true
     exit.hidden = true
     start.hidden = false
     delete visual.dataset.tryOn
+    visual.toggleAttribute('data-try-on-ended', cameraWasReady)
     onClose()
     if (restoreFocus) start.focus({ preventScroll: true })
     session.tracker?.close()
@@ -153,10 +158,11 @@ export function setupProductTryOn(onClose: () => void) {
     activeSession = session
     errorStatus.textContent = ''
     panel.hidden = false
+    scene.inert = true
     visual.dataset.tryOn = ''
     status.textContent = 'Разрешите доступ к камере'
     start.hidden = true
-    neutralOption.hidden = false
+    neutralOption.hidden = neutralOption.inert = false
     exit.hidden = false
     exit.focus({ preventScroll: true })
 
@@ -186,6 +192,7 @@ export function setupProductTryOn(onClose: () => void) {
       return
     }
     if (activeSession !== session) return
+    panel.dataset.cameraReady = ''
 
     try {
       const { createLipTracker, createLipMaskTracker } = await import('./lip-tracking')

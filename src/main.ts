@@ -26,6 +26,17 @@ neutralInput?.addEventListener('change', () => {
 })
 
 if (options) {
+  const storageKey = 'cosmetics-webar:first-shade'
+  let initialShadeId = 'S001'
+  try {
+    const savedShadeId = localStorage.getItem(storageKey)
+    if (savedShadeId !== null && shades.some(shade => shade.id === savedShadeId)) {
+      initialShadeId = savedShadeId
+    }
+  } catch {
+    // Use the default shade when storage is unavailable.
+  }
+
   for (const shade of shades) {
     const color = `rgb(${shade.rgb.join(', ')})`
     const label = document.createElement('label')
@@ -37,7 +48,7 @@ if (options) {
     input.type = 'radio'
     input.name = 'shade'
     input.value = shade.id
-    input.checked = shade.id === 'S001'
+    input.checked = shade.id === initialShadeId
     input.setAttribute('aria-label', shade.name)
 
     const swatch = document.createElement('span')
@@ -57,7 +68,15 @@ if (options) {
       tryOn?.setShade(shade.rgb)
     }
 
-    input.addEventListener('change', selectShade)
+    input.addEventListener('change', () => {
+      document.documentElement.dataset.animateShade = ''
+      selectShade()
+      try {
+        localStorage.setItem(storageKey, shade.id)
+      } catch {
+        // The current selection still works when storage is unavailable.
+      }
+    })
     if (input.checked) selectShade()
   }
 }

@@ -18,7 +18,9 @@
       <div class="product-image">
         <div class="product-scene">
           <div id="product-photos" class="product-photos">
-            <img id="product-poster" class="product-poster" src="/src/assets/lipstick-s001.webp" width="800" height="800" alt="Открытая помада «Мягкий цвет»" data-active>
+            <noscript>
+              <img class="product-poster" src="/src/assets/lipstick-s001.webp" width="800" height="800" alt="Открытая помада «Мягкий цвет»" data-active>
+            </noscript>
           </div>
           <div id="product-model" class="product-model" hidden inert></div>
         </div>
@@ -50,10 +52,12 @@
         </div>
         <p id="model-status" class="model-status" role="status"></p>
         <div id="product-try-on" class="try-on" role="group" aria-label="Виртуальная примерка" hidden>
-          <video id="try-on-video" muted playsinline aria-hidden="true"></video>
-          <canvas id="try-on-view" aria-hidden="true"></canvas>
-          <div class="try-on-comparison-layer" aria-hidden="true">
-            <canvas id="try-on-right-view"></canvas>
+          <div class="try-on-feed" aria-hidden="true">
+            <video id="try-on-video" muted playsinline></video>
+            <canvas id="try-on-view"></canvas>
+            <div class="try-on-comparison-layer">
+              <canvas id="try-on-right-view"></canvas>
+            </div>
           </div>
           <button type="button" id="compare-mode" class="compare-mode" aria-expanded="false"
               aria-controls="compare-second-palette" aria-label="Сравнить оттенки" title="Сравнить оттенки">
@@ -93,7 +97,7 @@
       <div class="shade-panel">
         <div class="palette compare-palettes">
           <div class="compare-palette-headings">
-            <div id="compare-first-heading" class="compare-palette-heading"><span>Оттенок<span id="compare-first-number" aria-hidden="true" hidden> 1</span></span> <span class="compare-first-value"><span id="selected-shade" class="selected-shade">Розовый</span></span></div>
+            <div id="compare-first-heading" class="compare-palette-heading"><span>Оттенок<span id="compare-first-number" aria-hidden="true" hidden> 1</span></span> <span class="compare-first-value"><span id="selected-shade" class="selected-shade"><noscript>Розовый</noscript></span></span></div>
             <div id="compare-second-heading" class="compare-palette-heading" hidden inert>
               <div class="compare-second-heading-text">
                 <span>Оттенок 2</span>
@@ -103,7 +107,7 @@
           </div>
           <fieldset class="compare-palette-group" aria-labelledby="compare-first-heading">
             <div id="shade-options" class="shade-options">
-              <label id="try-on-neutral" class="shade-option" title="Без оттенка" hidden>
+              <label id="try-on-neutral" class="shade-option" title="Без оттенка" hidden inert>
                 <input type="radio" name="shade" id="shade-none" value="none" aria-label="Без оттенка">
                 <span class="swatch swatch-neutral" aria-hidden="true"></span>
               </label>

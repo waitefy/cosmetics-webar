@@ -13,18 +13,18 @@ const posters = import.meta.glob<string>('./assets/lipstick-*.webp', {
 export function setupProductGallery() {
   const gallery = document.querySelector<HTMLDivElement>('#product-gallery')
   const photos = document.querySelector<HTMLDivElement>('#product-photos')
-  const poster = document.querySelector<HTMLImageElement>('#product-poster')
   const dots = gallery?.querySelector<HTMLDivElement>('.gallery-pagination')
   const prev = gallery?.querySelector<HTMLButtonElement>('.gallery-prev')
   const next = gallery?.querySelector<HTMLButtonElement>('.gallery-next')
-  if (!gallery || !photos || !poster || !dots || !prev || !next) return
+  if (!gallery || !photos || !dots || !prev || !next) return
 
   let selectedIndex = 0
   const entries = views.map((view, index) => {
-    const image = index === 0 ? poster : new Image(800, 800)
+    const image = new Image(800, 800)
+    if (index === 0) image.id = 'product-poster'
     image.alt = view.label
     image.className = 'product-poster'
-    if (index !== 0) photos.append(image)
+    photos.append(image)
 
     const button = document.createElement('button')
     button.type = 'button'

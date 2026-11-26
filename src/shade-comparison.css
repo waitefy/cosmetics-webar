@@ -25,7 +25,7 @@
     color-mix(in srgb, color-mix(in srgb, var(--compare-left-tint) 23%, var(--paper)) var(--compare-blend), var(--compare-single-bg)),
     color-mix(in srgb, var(--paper) var(--compare-blend), var(--compare-single-bg)) 50%,
     color-mix(in srgb, color-mix(in srgb, var(--compare-right-tint) 23%, var(--paper)) var(--compare-blend), var(--compare-single-bg)));
-  transition: --chosen-shade 420ms ease,
+  transition: --chosen-shade var(--shade-change-duration, 0ms) ease,
     --compare-theme-strength 600ms var(--ui-ease),
     --compare-left-tint 500ms var(--ui-ease),
     --compare-right-tint 500ms var(--ui-ease);
@@ -49,7 +49,7 @@
 .compare-palettes {
   container-type: inline-size;
   justify-self: stretch;
-  --compare-row-height: min(var(--compare-swatch-step), calc((100cqi + .375rem) / 9));
+  --compare-row-height: min(var(--compare-swatch-step), calc(100cqi / 9));
   --compare-first-rest: calc(var(--compare-row-height) / 2);
 }
 
@@ -177,17 +177,28 @@
   align-items: flex-start;
 }
 
-.compare-palettes .shade-option,
-#try-on-neutral[hidden] {
+.compare-palettes .shade-option {
   flex: 0 1 var(--compare-swatch-step);
   min-inline-size: 0;
   block-size: auto;
   aspect-ratio: 1;
 }
 
+#try-on-neutral {
+  --neutral-transition-duration: var(--ui-motion);
+  transition: opacity var(--neutral-transition-duration) var(--ui-ease), visibility var(--neutral-transition-duration);
+}
+
 #try-on-neutral[hidden] {
-  display: grid;
+  --neutral-transition-duration: var(--try-on-exit-motion);
+  opacity: 0;
   visibility: hidden;
+}
+
+:where(#try-on-neutral) .swatch {
+  outline: 1px solid transparent;
+  outline-offset: 3px;
+  transition: outline-color var(--neutral-transition-duration) var(--ui-ease);
 }
 
 #compare-second-palette[hidden] {
@@ -305,7 +316,7 @@
   display: grid;
   width: 40px;
   height: 40px;
-  transform: translate(-50%, -50%);
+  translate: -50% -50%;
   place-items: center;
   border-radius: 50%;
   background: #fff8f2;
@@ -335,31 +346,61 @@
 }
 
 @media (max-width: 44rem) {
-  .compare-palettes { --compare-first-rest: .25rem; }
-
   .shade-panel {
+    container-type: inline-size;
     --compare-swatch-step: 2.5rem;
     --compare-heading-size: .76rem;
-    min-block-size: calc(10.675rem + var(--compare-heading-line));
-    align-content: start;
+    --compare-mobile-swatch: clamp(2rem, calc(100cqi / 9), var(--compare-swatch-step));
+    --compare-mobile-row-gap: 0px;
+    --compare-row-height: var(--compare-mobile-swatch);
+    align-content: center;
   }
 
-  .product:not(:has(.product-image[data-try-on])) #compare-second-palette[hidden] {
-    display: none;
+  .compare-palettes {
+    container-type: normal;
+    --compare-row-height: var(--compare-mobile-swatch);
+    --compare-first-rest: 0px;
   }
 
-  .try-on-hint { line-height: 1.125rem; }
-
-  .product:has(.product-image[data-try-on]) .shade-panel {
-    grid-template-rows: auto auto;
-    grid-template-areas: 'palette' 'action';
+  .try-on-exit {
+    transition: translate var(--ui-motion) var(--ui-ease);
   }
 
-  .product:has(.product-image[data-try-on]) .try-on-hint { display: none; }
+  /* Keep room for the second palette while placing the action after the visible swatches. */
+  .shade-panel:has(#compare-second-palette[hidden]) :is(.try-on-start, .try-on-exit) {
+    translate: 0 calc(-1 * (var(--compare-row-height) + var(--compare-mobile-row-gap)));
+  }
+
+  .try-on-hint {
+    translate: 0 calc(100% + .5rem - var(--compare-row-height) - var(--compare-mobile-row-gap));
+  }
 
   .compare-palette-headings { gap: .4rem; }
   .compare-palette-heading { gap: .24rem; }
   #compare-second-heading { --compare-heading-inset: .4rem; }
+
+  .compare-palettes .shade-options {
+    flex-wrap: wrap;
+  }
+
+  .compare-palettes .shade-option {
+    flex: 0 0 var(--compare-mobile-swatch);
+  }
+
+  @container (width < 18rem) {
+    .compare-palettes .shade-options {
+      max-inline-size: calc(5 * var(--compare-mobile-swatch));
+    }
+
+    :is(.compare-palettes, .try-on-start, .try-on-exit, .try-on-hint) {
+      --compare-row-height: calc(2 * var(--compare-mobile-swatch));
+      --compare-mobile-row-gap: .375rem;
+    }
+
+    #compare-second-palette {
+      margin-block-start: var(--compare-mobile-row-gap);
+    }
+  }
 }
 
 @media (max-width: 22rem) {

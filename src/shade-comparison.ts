@@ -20,6 +20,13 @@ export function setupShadeComparison(onShadeChange: ShadeChange) {
       !secondPalette || !secondOptions || !secondHeading || !secondName) return
 
   const neutralName = 'Без оттенка'
+  const storageKey = 'cosmetics-webar:second-shade'
+  let secondShadeId: string | null = null
+  try {
+    secondShadeId = localStorage.getItem(storageKey)
+  } catch {
+    // Storage can be unavailable in private or restricted contexts.
+  }
   const rightInputs = new Map<string, HTMLInputElement>()
   let firstShade: Shade | undefined
   let comparing = false
@@ -61,8 +68,13 @@ export function setupShadeComparison(onShadeChange: ShadeChange) {
 
   secondOptions.addEventListener('change', (event) => {
     if (comparing && event.target instanceof HTMLInputElement) {
-      const id = event.target.value
-      setSecondShade(shades.find(shade => shade.id === id))
+      secondShadeId = event.target.value
+      setSecondShade(shades.find(shade => shade.id === secondShadeId))
+      try {
+        localStorage.setItem(storageKey, secondShadeId)
+      } catch {
+        // Keep the selection in memory when storage is unavailable.
+      }
     }
   })
 
@@ -93,10 +105,11 @@ export function setupShadeComparison(onShadeChange: ShadeChange) {
     buildSecondPalette()
     const index = shades.findIndex(shade => shade.id === firstShade?.id)
     const nextShade = shades[(index + 1) % shades.length]
-    const nextInput = nextShade && rightInputs.get(nextShade.id)
-    if (nextInput) nextInput.checked = true
+    const savedInput = secondShadeId === null ? undefined : rightInputs.get(secondShadeId)
+    const selectedInput = savedInput ?? (nextShade && rightInputs.get(nextShade.id))
+    if (selectedInput) selectedInput.checked = true
     split(50)
-    setSecondShade(nextShade)
+    setSecondShade(savedInput ? shades.find(shade => shade.id === savedInput.value) : nextShade)
   }
 
   mode.addEventListener('click', () => changeMode(!comparing))

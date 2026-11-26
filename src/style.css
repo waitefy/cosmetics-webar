@@ -15,7 +15,7 @@
 @property --chosen-shade {
   syntax: '<color>';
   inherits: true;
-  initial-value: #ba5272;
+  initial-value: #fffaf4;
 }
 
 :root {
@@ -27,6 +27,7 @@
     225%
   );
   --ui-motion: 400ms;
+  --try-on-exit-motion: calc(var(--ui-motion) * .45);
   --ui-ease: cubic-bezier(.22, .7, .28, 1);
   --ink: #2a1717;
   --berry: color-mix(in srgb, var(--chosen-shade) 24%, #2c171e);
@@ -36,7 +37,11 @@
   --gutter: clamp(1rem, 4vw, 3rem);
   color: var(--ink);
   background: color-mix(in srgb, var(--chosen-shade) 17%, var(--paper));
-  transition: --chosen-shade 420ms ease;
+  transition: --chosen-shade var(--shade-change-duration, 0ms) ease;
+}
+
+:root[data-animate-shade] {
+  --shade-change-duration: 420ms;
 }
 
 * {
@@ -278,13 +283,12 @@ body {
 
 .shade-options {
   display: flex;
-  margin-inline-start: -.375rem;
 }
 
-.shade-option:not([hidden]) {
+.shade-option {
   position: relative;
   display: grid;
-  place-items: center;
+  place-items: center start;
   flex: 0 1 2.75rem;
   min-inline-size: 0;
   block-size: 2.75rem;
@@ -536,14 +540,34 @@ body {
   inset-block-end: 4.25rem;
 }
 
-.product-image[data-try-on] > :not(.try-on) {
+.product-image[data-try-on] > :not(.try-on, .product-scene) {
   display: none;
 }
 
 .try-on {
   position: absolute;
   inset: 0;
-  background: #352322;
+}
+
+.try-on-feed {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.try-on[data-camera-ready] .try-on-feed {
+  opacity: 1;
+  animation: reveal-product-view calc(var(--ui-motion) * .625) var(--ui-ease);
+}
+
+.product-image[data-try-on-ended]:not([data-try-on]) .product-scene {
+  --product-view-start-opacity: .65;
+  animation: reveal-product-view var(--try-on-exit-motion) var(--ui-ease);
+}
+
+@keyframes reveal-product-view {
+  from { opacity: var(--product-view-start-opacity, 0); }
 }
 
 .try-on video,
@@ -669,22 +693,14 @@ body {
     border-radius: 0;
   }
 
-  .product-image[data-try-on] {
-    grid-row: intro-start / visual-end;
-  }
-
-  .product:has(.product-image[data-try-on]) .product-titlegroup {
-    visibility: hidden;
-  }
-
   .product-scene {
     translate: 0 -1rem;
   }
 
   .shade-panel {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: repeat(3, auto);
-    grid-template-areas: 'palette' 'action' 'hint';
+    grid-template-rows: auto auto;
+    grid-template-areas: 'palette' 'action';
     gap: 0;
     margin: .85rem var(--gutter) 0;
     padding: .8rem;
@@ -694,8 +710,16 @@ body {
     margin-block-start: .7rem;
   }
 
+  .try-on-start[hidden],
+  .try-on .model-switch,
+  #try-on-start[hidden] ~ .try-on-hint {
+    display: none;
+  }
+
   .try-on-hint {
-    margin-block-start: .5rem;
+    grid-area: action;
+    align-self: end;
+    line-height: 1.125rem;
   }
 
   .try-on-error {
