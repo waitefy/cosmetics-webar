@@ -9,6 +9,7 @@ type TryOnSession = {
   tracker?: FaceLandmarker
   track?: FrameRequestCallback
   frame?: number
+  darkenTimer?: number
 }
 
 function stopStream(stream: MediaStream) {
@@ -113,6 +114,7 @@ export function setupProductTryOn(onClose: () => void) {
     if (!session) return
 
     activeSession = undefined
+    clearTimeout(session.darkenTimer)
     if (session.frame !== undefined) cancelAnimationFrame(session.frame)
     if (session.stream) stopStream(session.stream)
     video.pause()
@@ -131,6 +133,7 @@ export function setupProductTryOn(onClose: () => void) {
     exit.hidden = true
     start.hidden = false
     delete visual.dataset.tryOn
+    delete visual.dataset.tryOnExpanded
     visual.toggleAttribute('data-try-on-ended', cameraWasReady)
     onClose()
     if (restoreFocus) start.focus({ preventScroll: true })
@@ -161,6 +164,34 @@ export function setupProductTryOn(onClose: () => void) {
     scene.inert = true
     visual.dataset.tryOn = ''
     status.textContent = 'Разрешите доступ к камере'
+    let scrimReady = matchMedia('(prefers-reduced-motion: reduce)').matches
+    let cameraReady = false
+    const revealCamera = () => {
+      if (activeSession === session && scrimReady && cameraReady) {
+        panel.dataset.cameraReady = ''
+      }
+    }
+    const finishDarken = () => {
+      if (activeSession !== session || scrimReady) return
+      scrimReady = true
+      visual.dataset.tryOnExpanded = ''
+      revealCamera()
+    }
+    if (scrimReady) {
+      visual.dataset.tryOnExpanded = ''
+    } else {
+      const onFadeIn = (event: TransitionEvent) => {
+        if (event.target === panel && event.propertyName === 'opacity') {
+          panel.removeEventListener('transitionend', onFadeIn)
+          finishDarken()
+        }
+      }
+      panel.addEventListener('transitionend', onFadeIn)
+      session.darkenTimer = window.setTimeout(() => {
+        panel.removeEventListener('transitionend', onFadeIn)
+        finishDarken()
+      }, 220)
+    }
     start.hidden = true
     neutralOption.hidden = neutralOption.inert = false
     exit.hidden = false
@@ -192,7 +223,6 @@ export function setupProductTryOn(onClose: () => void) {
       return
     }
     if (activeSession !== session) return
-    panel.dataset.cameraReady = ''
 
     try {
       const { createLipTracker, createLipMaskTracker } = await import('./lip-tracking')
@@ -211,8 +241,7 @@ export function setupProductTryOn(onClose: () => void) {
       const frameInterval = 1000 / 30
       const maskTracker = createLipMaskTracker()
       let nextFrameTime = performance.now()
-      let lastPaintedMask = -Infinity
-
+      let lastPaintedMask = nextFrameTime
       const track = (time: number) => {
         if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && time >= nextFrameTime) {
           nextFrameTime = Math.max(nextFrameTime + frameInterval, time)
@@ -227,7 +256,7 @@ export function setupProductTryOn(onClose: () => void) {
             }
             if (!capturedFrame) {
               maskTracker.reset()
-              lastPaintedMask = -Infinity
+              lastPaintedMask = time
             }
             // Read and display the same camera frame so the overlay cannot lag behind the preview.
             sourceContext.drawImage(video, 0, 0)
@@ -250,6 +279,8 @@ export function setupProductTryOn(onClose: () => void) {
 
       session.track = track
       updateTracking(session)
+      cameraReady = true
+      revealCamera()
     } catch (error) {
       if (activeSession === session) console.error('Не удалось загрузить модель примерки', error)
       fail(session, 'Не удалось загрузить примерку. Попробуйте ещё раз.')
